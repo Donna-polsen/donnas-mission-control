@@ -1,0 +1,1 @@
+/home/ubuntu/.openclaw/workspace/SERVER_MONITOR.md
