@@ -21,6 +21,34 @@ export default function MissionControl() {
   const [pulseLogs, setPulseLogs] = useState<string[]>([]);
   const [systemData, setSystemData] = useState<any>(null);
   const [externalPulse, setExternalPulse] = useState({ github: { open_prs: 0 }, gmail: { unread_count: 0 } });
+  const [tasks, setTasks] = useState<any[]>([]);
+
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch('/api/tasks');
+      if (res.ok) {
+        const data = await res.json();
+        setTasks(data.tasks || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch tasks', err);
+    }
+  };
+
+  const updateTaskStatus = async (id: number, status: string) => {
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status })
+      });
+      if (res.ok) {
+        fetchTasks(); // Refresh
+      }
+    } catch (err) {
+      console.error('Failed to update task', err);
+    }
+  };
 
   const openVaultFile = async (filename: string) => {
     setVaultFileName(filename);
@@ -73,7 +101,11 @@ export default function MissionControl() {
     };
 
     fetchTelemetry();
-    const pulseTimer = setInterval(fetchTelemetry, 5000);
+    fetchTasks();
+    const pulseTimer = setInterval(() => {
+      fetchTelemetry();
+      fetchTasks();
+    }, 5000);
 
     return () => {
       clearInterval(timer);
@@ -202,31 +234,53 @@ export default function MissionControl() {
               <h2 className="text-sm font-bold text-gray-200 flex items-center"><LayoutGrid size={16} className="mr-2"/> The Grid (Priority Tasks)</h2>
             </div>
             <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Column */}
+              {/* Backlog Column */}
               <div className="bg-[#0D1117] rounded p-2 border border-gray-800">
                 <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase">Backlog</h4>
-                <div className="bg-[#21262D] p-3 rounded text-xs border border-gray-700 mb-2">
-                  <p className="font-medium text-gray-300 mb-1">Audit Finance Holds</p>
-                  <p className="text-gray-500 line-clamp-2">Cross-reference isMissingLineItemConnection against unPaid state.</p>
-                </div>
+                {tasks.filter(t => t.status === 'backlog').map(task => (
+                  <div key={task.id} className="bg-[#21262D] p-3 rounded text-xs border border-gray-700 mb-2 group">
+                    <p className="font-medium text-gray-300 mb-1">{task.title}</p>
+                    <p className="text-gray-500 line-clamp-2 mb-2">{task.description}</p>
+                    <div className="flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[10px] text-gray-500">{task.assignee}</span>
+                      <button onClick={() => updateTaskStatus(task.id, 'in_progress_donna')} className="text-[10px] bg-gray-700 hover:bg-gray-600 px-2 py-0.5 rounded text-white">Start</button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              {/* Column */}
+              
+              {/* In Progress Column */}
               <div className="bg-[#0D1117] rounded p-2 border border-gray-800">
                 <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase">In Progress</h4>
-                <div className="bg-[#21262D] p-3 rounded text-xs border border-[#58A6FF] mb-2 border-opacity-50">
-                  <div className="flex justify-between items-start mb-1">
-                    <p className="font-medium text-gray-300">Build Next.js MVP</p>
-                    <span className="text-[10px] bg-[#58A6FF] bg-opacity-20 text-[#58A6FF] px-1 rounded">Jarvis</span>
+                {tasks.filter(t => t.status.startsWith('in_progress')).map(task => (
+                  <div key={task.id} className="bg-[#21262D] p-3 rounded text-xs border border-[#58A6FF] mb-2 border-opacity-50 group">
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="font-medium text-gray-300">{task.title}</p>
+                      <span className="text-[10px] bg-[#58A6FF] bg-opacity-20 text-[#58A6FF] px-1 rounded uppercase">
+                        {task.status.split('_').pop()}
+                      </span>
+                    </div>
+                    <p className="text-gray-500 line-clamp-2 mb-2">{task.description}</p>
+                    <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => updateTaskStatus(task.id, 'done')} className="text-[10px] bg-[#238636] hover:bg-green-600 px-2 py-0.5 rounded text-white">Complete</button>
+                    </div>
                   </div>
-                  <p className="text-gray-500 line-clamp-2">Implement dark mode mission control per PRD.</p>
-                </div>
+                ))}
               </div>
-              {/* Column */}
+
+              {/* Done Column */}
               <div className="bg-[#0D1117] rounded p-2 border border-gray-800">
                 <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase">Done</h4>
-                <div className="bg-[#21262D] p-3 rounded text-xs border border-[#238636] mb-2 border-opacity-50 opacity-70">
-                  <p className="font-medium text-gray-300 flex items-center"><CheckCircle2 size={12} className="mr-1 text-[#238636]"/> Fetch Inbox Context</p>
-                </div>
+                {tasks.filter(t => t.status === 'done').map(task => (
+                  <div key={task.id} className="bg-[#21262D] p-3 rounded text-xs border border-[#238636] mb-2 border-opacity-50 opacity-70 group">
+                    <p className="font-medium text-gray-300 flex items-center mb-1">
+                      <CheckCircle2 size={12} className="mr-1 text-[#238636]"/> {task.title}
+                    </p>
+                    <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => updateTaskStatus(task.id, 'backlog')} className="text-[10px] text-gray-500 hover:text-gray-300">Reopen</button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
