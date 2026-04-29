@@ -13,28 +13,36 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const file = searchParams.get('file');
 
-  if (!file) {
-    return NextResponse.json({ error: 'File parameter is required' }, { status: 400 });
-  }
-
   if (!supabase) {
     return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
   }
 
   try {
-    const { data, error } = await supabase
-      .from('telemetry_state')
-      .select('data')
-      .eq('key', `vault_${file}`)
-      .single();
+    if (!file) {
+      // Return list of all vault files
+      const { data, error } = await supabase
+        .from('telemetry_state')
+        .select('key')
+        .like('key', 'vault_%');
 
-    if (error || !data) {
-      return NextResponse.json({ error: 'File not found or inaccessible' }, { status: 404 });
+      if (error) throw error;
+      const files = data.map((d: any) => d.key.replace('vault_', ''));
+      return NextResponse.json({ files });
+    } else {
+      // Return specific file content
+      const { data, error } = await supabase
+        .from('telemetry_state')
+        .select('data')
+        .eq('key', `vault_${file}`)
+        .single();
+
+      if (error || !data) {
+        return NextResponse.json({ error: 'File not found or inaccessible' }, { status: 404 });
+      }
+      return NextResponse.json({ content: data.data.content });
     }
-
-    return NextResponse.json({ content: data.data.content });
   } catch (error) {
     console.error('Error reading vault from Supabase:', error);
-    return NextResponse.json({ error: 'File not found or inaccessible' }, { status: 404 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

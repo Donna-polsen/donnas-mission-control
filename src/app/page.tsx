@@ -23,6 +23,19 @@ export default function MissionControl() {
   const [externalPulse, setExternalPulse] = useState({ github: { open_prs: 0 }, gmail: { unread_count: 0 } });
   const [tasks, setTasks] = useState<any[]>([]);
   const [agentsData, setAgentsData] = useState<any>({ donna: null, jarvis: null });
+  const [roadmap, setRoadmap] = useState<any[]>([]);
+
+  const fetchRoadmap = async () => {
+    try {
+      const res = await fetch('/api/roadmap');
+      if (res.ok) {
+        const data = await res.json();
+        setRoadmap(data.roadmap || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch roadmap', err);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -70,7 +83,23 @@ export default function MissionControl() {
     }
   };
 
+  const [vaultFiles, setVaultFiles] = useState<string[]>([]);
+
   useEffect(() => {
+    // Fetch vault files list
+    const fetchVaultList = async () => {
+      try {
+        const res = await fetch('/api/vault');
+        if (res.ok) {
+          const data = await res.json();
+          setVaultFiles(data.files || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch vault list', err);
+      }
+    };
+    fetchVaultList();
+
     setCurrentTime(new Date().toISOString().substring(11, 16) + ' UTC');
     const timer = setInterval(() => {
       setCurrentTime(new Date().toISOString().substring(11, 16) + ' UTC');
@@ -108,9 +137,11 @@ export default function MissionControl() {
 
     fetchTelemetry();
     fetchTasks();
+    fetchRoadmap();
     const pulseTimer = setInterval(() => {
       fetchTelemetry();
       fetchTasks();
+      fetchRoadmap();
     }, 5000);
 
     return () => {
@@ -154,22 +185,12 @@ export default function MissionControl() {
             <p className="text-sm text-gray-400 mb-6">Strategic overview of upcoming features and system upgrades.</p>
             
             <div className="space-y-6">
-              <div className="border-l-2 border-[#238636] pl-4">
-                <h3 className="text-sm font-bold text-gray-300">Phase 1: UI MVP</h3>
-                <p className="text-xs text-gray-500 mt-1">Mobile responsiveness, static dashboard layout, and foundational styling.</p>
-              </div>
-              <div className="border-l-2 border-[#58A6FF] pl-4">
-                <h3 className="text-sm font-bold text-gray-300">Phase 2: Vault API</h3>
-                <p className="text-xs text-gray-500 mt-1">Secure local file access through Next.js API routes (reading MEMORY, INBOX_TRIAGE, ACTIVITY).</p>
-              </div>
-              <div className="border-l-2 border-[#238636] pl-4">
-                <h3 className="text-sm font-bold text-gray-300">Phase 3: Live Telemetry</h3>
-                <p className="text-xs text-gray-500 mt-1">Websocket integration for real-time pulse feed and direct Makat backend connectivity.</p>
-              </div>
-              <div className="border-l-2 border-[#238636] pl-4">
-                <h3 className="text-sm font-bold text-gray-300">Phase 4: Gamified Telemetry/Office View</h3>
-                <p className="text-xs text-gray-500 mt-1">Immersive operations view, agent analytics, and dynamic office-wide visualizations.</p>
-              </div>
+              {roadmap.map((item) => (
+                <div key={item.id} className={`border-l-2 pl-4 ${item.status === 'done' ? 'border-[#58A6FF]' : item.status === 'in_progress' ? 'border-[#D29922]' : 'border-gray-700'}`}>
+                  <h3 className="text-sm font-bold text-gray-300">{item.phase}: {item.title}</h3>
+                  <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -302,47 +323,35 @@ export default function MissionControl() {
               <h2 className="text-sm font-bold text-gray-200 flex items-center"><Map size={16} className="mr-2"/> The Horizon</h2>
             </div>
             <div className="p-4 space-y-4">
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-300">Phase 1: UI MVP</span>
-                  <span className="text-[#58A6FF]">100%</span>
+              {roadmap.map(item => (
+                <div key={item.id}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-300">{item.phase}: {item.title}</span>
+                    <span className={item.progress === 100 ? 'text-[#58A6FF]' : item.progress > 0 ? 'text-[#D29922]' : 'text-gray-500'}>
+                      {item.progress}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-800 rounded-full h-1.5">
+                    <div 
+                      className={`${item.progress === 100 ? 'bg-[#58A6FF]' : item.progress > 0 ? 'bg-[#D29922]' : 'bg-gray-600'} h-1.5 rounded-full`} 
+                      style={{ width: `${item.progress}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-800 rounded-full h-1.5">
-                  <div className="bg-[#58A6FF] h-1.5 rounded-full" style={{ width: '100%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-300">Phase 2: Vault API</span>
-                  <span className="text-[#D29922]">80%</span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-1.5">
-                  <div className="bg-[#D29922] h-1.5 rounded-full" style={{ width: '80%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-300">Phase 3: Live Telemetry</span>
-                  <span className="text-gray-500">0%</span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-1.5">
-                  <div className="bg-gray-600 h-1.5 rounded-full" style={{ width: '0%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-300">Phase 4: Gamified Telemetry/Office View</span>
-                  <span className="text-gray-500">0%</span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-1.5">
-                  <div className="bg-gray-600 h-1.5 rounded-full" style={{ width: '0%' }}></div>
-                </div>
-              </div>
+              ))}
               <div className="mt-4 pt-4 border-t border-gray-800">
-                <h4 className="text-xs font-semibold text-gray-400 mb-2">Upcoming Milestones</h4>
+                <h4 className="text-xs font-semibold text-gray-400 mb-2">Active Objectives</h4>
                 <ul className="text-xs space-y-2 text-gray-500">
-                  <li className="flex items-start"><div className="w-1.5 h-1.5 rounded-full bg-[#D29922] mt-1.5 mr-2 shrink-0"></div> Hook up `fetch_inbox_context` to UI</li>
-                  <li className="flex items-start"><div className="w-1.5 h-1.5 rounded-full bg-gray-600 mt-1.5 mr-2 shrink-0"></div> Integrate Makat Websockets</li>
+                  {tasks.filter(t => t.status.startsWith('in_progress')).map(t => (
+                    <li key={`obj-${t.id}`} className="flex items-start">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#D29922] mt-1.5 mr-2 shrink-0"></div> {t.title}
+                    </li>
+                  ))}
+                  {tasks.filter(t => t.status.startsWith('in_progress')).length === 0 && (
+                    <li className="flex items-start">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-600 mt-1.5 mr-2 shrink-0"></div> No active objectives
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -403,19 +412,16 @@ export default function MissionControl() {
             
             <div>
               <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">The Vault</h2>
-              <ul className="space-y-1 font-mono text-sm">
+              <ul className="space-y-1 font-mono text-sm max-h-[40vh] overflow-y-auto">
                 <li className="flex items-center space-x-2 text-gray-400 p-1 cursor-pointer hover:text-gray-200">
                   <FolderOpen size={14} /><span>workspace/</span>
                 </li>
-                <li onClick={() => openVaultFile('MEMORY.md')} className="flex items-center space-x-2 text-gray-400 p-1 pl-4 cursor-pointer hover:text-gray-200">
-                  <FileText size={14} className="text-[#238636]" /><span>MEMORY.md</span>
-                </li>
-                <li onClick={() => openVaultFile('INBOX_TRIAGE.md')} className="flex items-center space-x-2 text-gray-400 p-1 pl-4 cursor-pointer hover:text-gray-200">
-                  <FileText size={14} className="text-[#D29922]" /><span>INBOX_TRIAGE.md</span>
-                </li>
-                <li onClick={() => openVaultFile('ACTIVITY.md')} className="flex items-center space-x-2 text-gray-400 p-1 pl-4 cursor-pointer hover:text-gray-200">
-                  <FileText size={14} /><span>ACTIVITY.md</span>
-                </li>
+                {vaultFiles.map(file => (
+                  <li key={file} onClick={() => openVaultFile(file)} className="flex items-center space-x-2 text-gray-400 p-1 pl-4 cursor-pointer hover:text-gray-200">
+                    <FileText size={14} className={file === 'MEMORY.md' ? 'text-[#238636]' : file === 'INBOX_TRIAGE.md' ? 'text-[#D29922]' : file === 'DONNAS_DASHBOARD_PRD.md' ? 'text-[#58A6FF]' : ''} />
+                    <span className="truncate">{file}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
