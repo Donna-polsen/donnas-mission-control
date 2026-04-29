@@ -135,7 +135,7 @@ export default function MissionControl() {
           </div>
         </div>
       );
-    }
+    } // end if roadmap
 
     return (
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
@@ -180,11 +180,6 @@ export default function MissionControl() {
               </div>
             </div>
           </div>
-        </div>
-              <p>Current Task: #492 Dash MVP</p>
-            </div>
-          </div>
-
           <div className="bg-[#161B22] border border-gray-800 p-4 rounded-lg flex flex-col">
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-sm font-bold text-gray-200">Host Telemetry</h3>
@@ -288,8 +283,8 @@ export default function MissionControl() {
           </div>
         </div>
       </div>
-    );
-  };
+    ); // end return renderContent default
+  }; // end renderContent()
 
   return (
     <div className="flex h-screen bg-[#0D1117] text-gray-300 font-sans overflow-hidden">
