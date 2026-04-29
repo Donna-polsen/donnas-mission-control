@@ -22,6 +22,7 @@ export default function MissionControl() {
   const [systemData, setSystemData] = useState<any>(null);
   const [externalPulse, setExternalPulse] = useState({ github: { open_prs: 0 }, gmail: { unread_count: 0 } });
   const [tasks, setTasks] = useState<any[]>([]);
+  const [agentsData, setAgentsData] = useState<any>({ donna: null, jarvis: null });
 
   const fetchTasks = async () => {
     try {
@@ -95,6 +96,11 @@ export default function MissionControl() {
             gmail: { unread_count: data.gmail?.unread_count || 0 }
           });
         }
+        const agentsRes = await fetch('/api/agents');
+        if (agentsRes.ok) {
+          const data = await agentsRes.json();
+          setAgentsData(data);
+        }
       } catch (e) {
         console.error(e);
       }
@@ -156,11 +162,11 @@ export default function MissionControl() {
                 <h3 className="text-sm font-bold text-gray-300">Phase 2: Vault API</h3>
                 <p className="text-xs text-gray-500 mt-1">Secure local file access through Next.js API routes (reading MEMORY, INBOX_TRIAGE, ACTIVITY).</p>
               </div>
-              <div className="border-l-2 border-gray-700 pl-4">
+              <div className="border-l-2 border-[#238636] pl-4">
                 <h3 className="text-sm font-bold text-gray-300">Phase 3: Live Telemetry</h3>
                 <p className="text-xs text-gray-500 mt-1">Websocket integration for real-time pulse feed and direct Makat backend connectivity.</p>
               </div>
-              <div className="border-l-2 border-gray-700 pl-4">
+              <div className="border-l-2 border-[#238636] pl-4">
                 <h3 className="text-sm font-bold text-gray-300">Phase 4: Gamified Telemetry/Office View</h3>
                 <p className="text-xs text-gray-500 mt-1">Immersive operations view, agent analytics, and dynamic office-wide visualizations.</p>
               </div>
@@ -177,23 +183,28 @@ export default function MissionControl() {
           <div className="bg-[#161B22] border border-gray-800 p-4 rounded-lg flex flex-col">
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-sm font-bold text-gray-200">Donna (Lead Ops)</h3>
-              <span className="bg-[#58A6FF] bg-opacity-20 text-[#58A6FF] text-xs px-2 py-0.5 rounded font-mono">Idle</span>
+              <span className={`text-xs px-2 py-0.5 rounded font-mono ${agentsData?.donna?.status === 'Active' ? 'bg-[#238636] bg-opacity-20 text-[#238636]' : 'bg-[#58A6FF] bg-opacity-20 text-[#58A6FF]'}`}>
+                {agentsData?.donna?.status || 'Idle'}
+              </span>
             </div>
             <div className="text-xs text-gray-400 space-y-1">
-              <p>Model: claude-3-5-sonnet</p>
-              <p>Uptime: 4h 12m</p>
-              <p>Active Tokens: 45k / 200k</p>
+              <p>Model: {agentsData?.donna?.model || 'Unknown'}</p>
+              <p>Uptime: {agentsData?.donna?.uptime || '0m'}</p>
+              <p>Active Tokens: {agentsData?.donna?.tokens ? `${(agentsData.donna.tokens / 1000).toFixed(1)}k` : '0'} / 200k</p>
             </div>
           </div>
 
           <div className="bg-[#161B22] border border-gray-800 p-4 rounded-lg flex flex-col">
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-sm font-bold text-gray-200">Jarvis (Execution)</h3>
-              <span className="bg-[#D29922] bg-opacity-20 text-[#D29922] text-xs px-2 py-0.5 rounded font-mono">Building UI</span>
+              <span className={`text-xs px-2 py-0.5 rounded font-mono ${agentsData?.jarvis?.status === 'Active' ? 'bg-[#D29922] bg-opacity-20 text-[#D29922]' : 'bg-gray-700 bg-opacity-50 text-gray-400'}`}>
+                {agentsData?.jarvis?.status || 'Inactive'}
+              </span>
             </div>
             <div className="text-xs text-gray-400 space-y-1">
-              <p>Model: gemini-3.1-pro</p>
-              <p>Uptime: 0h 15m</p>
+              <p>Model: {agentsData?.jarvis?.model || 'Unknown'}</p>
+              <p>Uptime: {agentsData?.jarvis?.uptime || '0m'}</p>
+              <p>Active Tokens: {agentsData?.jarvis?.tokens ? `${(agentsData.jarvis.tokens / 1000).toFixed(1)}k` : '0'} / 200k</p>
             </div>
           </div>
 
