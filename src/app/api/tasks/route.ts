@@ -36,8 +36,18 @@ export async function POST(request: Request) {
   
   try {
     const body = await request.json();
-    const { id, status, assignee } = body;
+    const { action, id, status, assignee, title } = body;
     
+    if (action === 'create') {
+      const { data, error } = await supabase
+        .from('telemetry_tasks')
+        .insert([{ title, status: status || 'backlog', assignee: assignee || 'unassigned' }])
+        .select();
+      
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ task: data[0] });
+    }
+
     if (!id || !status) {
       return NextResponse.json({ error: 'Missing id or status' }, { status: 400 });
     }

@@ -24,6 +24,25 @@ export default function MissionControl() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [agentsData, setAgentsData] = useState<any>({ donna: null, jarvis: null });
   const [roadmap, setRoadmap] = useState<any[]>([]);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  const addTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTaskTitle.trim()) return;
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', title: newTaskTitle, status: 'backlog', assignee: 'unassigned' })
+      });
+      if (res.ok) {
+        setNewTaskTitle('');
+        fetchTasks();
+      }
+    } catch (err) {
+      console.error('Failed to add task', err);
+    }
+  };
 
   const fetchRoadmap = async () => {
     try {
@@ -267,8 +286,23 @@ export default function MissionControl() {
             </div>
             <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Backlog Column */}
-              <div className="bg-[#0D1117] rounded p-2 border border-gray-800">
-                <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase">Backlog</h4>
+              <div className="bg-[#0D1117] rounded p-2 border border-gray-800 flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase">Backlog</h4>
+                </div>
+                
+                {/* Add Task Input */}
+                <form onSubmit={addTask} className="mb-3 flex">
+                  <input 
+                    type="text" 
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder="New task..." 
+                    className="flex-1 bg-[#161B22] border border-gray-700 rounded-l px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-[#58A6FF]"
+                  />
+                  <button type="submit" className="bg-[#238636] hover:bg-green-600 px-2 py-1 rounded-r text-white text-xs font-bold">+</button>
+                </form>
+
                 {tasks.filter(t => t.status === 'backlog').map(task => (
                   <div key={task.id} className="bg-[#21262D] p-3 rounded text-xs border border-gray-700 mb-2 group">
                     <p className="font-medium text-gray-300 mb-1">{task.title}</p>
