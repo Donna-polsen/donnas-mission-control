@@ -19,6 +19,7 @@ export default function MissionControl() {
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [pulseLogs, setPulseLogs] = useState<string[]>([]);
   const [systemData, setSystemData] = useState<any>(null);
+  const [externalPulse, setExternalPulse] = useState({ github: { open_prs: 0 }, gmail: { unread_count: 0 } });
 
   const openVaultFile = async (filename: string) => {
     setVaultFileName(filename);
@@ -56,6 +57,14 @@ export default function MissionControl() {
         if (sysRes.ok) {
           const data = await sysRes.json();
           setSystemData(data);
+        }
+        const extRes = await fetch('/api/external-pulse');
+        if (extRes.ok) {
+          const data = await extRes.json();
+          setExternalPulse({
+            github: { open_prs: data.github?.open_prs || 0 },
+            gmail: { unread_count: data.gmail?.unread_count || 0 }
+          });
         }
       } catch (e) {
         console.error(e);
@@ -130,8 +139,8 @@ export default function MissionControl() {
 
     return (
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-        {/* Top Row: Agent Health */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Top Row: Agent Health & External Pulse */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-[#161B22] border border-gray-800 p-4 rounded-lg flex flex-col">
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-sm font-bold text-gray-200">Donna (Lead Ops)</h3>
@@ -152,6 +161,26 @@ export default function MissionControl() {
             <div className="text-xs text-gray-400 space-y-1">
               <p>Model: gemini-3.1-pro</p>
               <p>Uptime: 0h 15m</p>
+            </div>
+          </div>
+
+          <div className="bg-[#161B22] border border-gray-800 p-4 rounded-lg flex flex-col col-span-1 md:col-span-2 lg:col-span-2">
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-sm font-bold text-gray-200">External Pulse (Live Data)</h3>
+              <span className="bg-[#238636] bg-opacity-20 text-[#238636] text-xs px-2 py-0.5 rounded font-mono">Synced</span>
+            </div>
+            <div className="flex space-x-6 mt-2">
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Unread Gmails</span>
+                <span className="text-2xl font-mono text-[#58A6FF] mt-1">{externalPulse.gmail.unread_count}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Open GitHub PRs</span>
+                <span className="text-2xl font-mono text-[#D29922] mt-1">{externalPulse.github.open_prs}</span>
+              </div>
+            </div>
+          </div>
+        </div>
               <p>Current Task: #492 Dash MVP</p>
             </div>
           </div>
