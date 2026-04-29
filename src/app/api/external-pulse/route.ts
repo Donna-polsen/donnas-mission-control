@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 export async function GET() {
   try {
-    const pulsePath = path.join(process.cwd(), '../../workspace/EXTERNAL_PULSE.json');
-    if (!fs.existsSync(pulsePath)) {
+    const { data, error } = await supabase
+      .from('telemetry_state')
+      .select('data')
+      .eq('key', 'external_pulse')
+      .single();
+
+    if (error || !data) {
       return NextResponse.json({ 
         github: { open_prs: 0 }, 
         gmail: { unread_count: 0 },
@@ -13,12 +22,9 @@ export async function GET() {
       });
     }
 
-    const content = fs.readFileSync(pulsePath, 'utf8');
-    const data = JSON.parse(content);
-
-    return NextResponse.json(data);
+    return NextResponse.json(data.data);
   } catch (error) {
-    console.error("Error reading EXTERNAL_PULSE.json", error);
+    console.error("Error reading from Supabase", error);
     return NextResponse.json({ error: "Failed to read external pulse" }, { status: 500 });
   }
 }

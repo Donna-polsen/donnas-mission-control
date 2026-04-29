@@ -1,21 +1,28 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 export async function GET() {
   try {
-    const activityPath = path.join(process.cwd(), 'src', 'content', 'ACTIVITY.md');
-    if (!fs.existsSync(activityPath)) {
+    const { data, error } = await supabase
+      .from('telemetry_pulse')
+      .select('log_text')
+      .order('id', { ascending: false })
+      .limit(20);
+
+    if (error || !data || data.length === 0) {
       return NextResponse.json({ pulse: ["No activity log found."] });
     }
 
-    const content = fs.readFileSync(activityPath, 'utf8');
-    const lines = content.trim().split('\n');
-    const last20Lines = lines.slice(-20).filter(line => line.trim() !== '');
-
-    return NextResponse.json({ pulse: last20Lines });
+    // Return in chronological order for terminal view
+    const logs = data.map(row => row.log_text).reverse();
+    return NextResponse.json({ pulse: logs });
   } catch (error) {
-    console.error("Error reading ACTIVITY.md", error);
+    console.error("Error reading from Supabase", error);
     return NextResponse.json({ error: "Failed to read pulse" }, { status: 500 });
   }
 }
