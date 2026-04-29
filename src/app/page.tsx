@@ -44,6 +44,9 @@ export default function MissionControl() {
     }
   };
 
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [editedDescription, setEditedDescription] = useState('');
+
   const fetchRoadmap = async () => {
     try {
       const res = await fetch('/api/roadmap');
@@ -68,19 +71,27 @@ export default function MissionControl() {
     }
   };
 
-  const updateTaskStatus = async (id: number, status: string) => {
+  const updateTask = async (id: number, updates: any) => {
     try {
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status })
+        body: JSON.stringify({ id, ...updates })
       });
       if (res.ok) {
-        fetchTasks(); // Refresh
+        fetchTasks();
+        if (selectedTask && selectedTask.id === id) {
+          const { task } = await res.json();
+          setSelectedTask(task);
+        }
       }
     } catch (err) {
       console.error('Failed to update task', err);
     }
+  };
+
+  const updateTaskStatus = async (id: number, status: string) => {
+    await updateTask(id, { status });
   };
 
   const openVaultFile = async (filename: string) => {
@@ -304,12 +315,14 @@ export default function MissionControl() {
                 </form>
 
                 {tasks.filter(t => t.status === 'backlog').map(task => (
-                  <div key={task.id} className="bg-[#21262D] p-3 rounded text-xs border border-gray-700 mb-2 group">
+                  <div key={task.id} 
+                       className="bg-[#21262D] p-3 rounded text-xs border border-gray-700 mb-2 group cursor-pointer hover:border-gray-500 transition-colors"
+                       onClick={() => { setSelectedTask(task); setEditedDescription(task.description || ''); }}>
                     <p className="font-medium text-gray-300 mb-1">{task.title}</p>
                     <p className="text-gray-500 line-clamp-2 mb-2">{task.description}</p>
                     <div className="flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className="text-[10px] text-gray-500">{task.assignee}</span>
-                      <button onClick={() => updateTaskStatus(task.id, 'in_progress_donna')} className="text-[10px] bg-gray-700 hover:bg-gray-600 px-2 py-0.5 rounded text-white">Start</button>
+                      <button onClick={(e) => { e.stopPropagation(); updateTaskStatus(task.id, 'in_progress_donna'); }} className="text-[10px] bg-gray-700 hover:bg-gray-600 px-2 py-0.5 rounded text-white">Start</button>
                     </div>
                   </div>
                 ))}
@@ -319,7 +332,9 @@ export default function MissionControl() {
               <div className="bg-[#0D1117] rounded p-2 border border-gray-800">
                 <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase">In Progress</h4>
                 {tasks.filter(t => t.status.startsWith('in_progress')).map(task => (
-                  <div key={task.id} className="bg-[#21262D] p-3 rounded text-xs border border-[#58A6FF] mb-2 border-opacity-50 group">
+                  <div key={task.id} 
+                       className="bg-[#21262D] p-3 rounded text-xs border border-[#58A6FF] mb-2 border-opacity-50 group cursor-pointer hover:border-opacity-100 transition-colors"
+                       onClick={() => { setSelectedTask(task); setEditedDescription(task.description || ''); }}>
                     <div className="flex justify-between items-start mb-1">
                       <p className="font-medium text-gray-300">{task.title}</p>
                       <span className="text-[10px] bg-[#58A6FF] bg-opacity-20 text-[#58A6FF] px-1 rounded uppercase">
@@ -328,7 +343,7 @@ export default function MissionControl() {
                     </div>
                     <p className="text-gray-500 line-clamp-2 mb-2">{task.description}</p>
                     <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => updateTaskStatus(task.id, 'done')} className="text-[10px] bg-[#238636] hover:bg-green-600 px-2 py-0.5 rounded text-white">Complete</button>
+                      <button onClick={(e) => { e.stopPropagation(); updateTaskStatus(task.id, 'done'); }} className="text-[10px] bg-[#238636] hover:bg-green-600 px-2 py-0.5 rounded text-white">Complete</button>
                     </div>
                   </div>
                 ))}
@@ -338,12 +353,14 @@ export default function MissionControl() {
               <div className="bg-[#0D1117] rounded p-2 border border-gray-800">
                 <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase">Done</h4>
                 {tasks.filter(t => t.status === 'done').map(task => (
-                  <div key={task.id} className="bg-[#21262D] p-3 rounded text-xs border border-[#238636] mb-2 border-opacity-50 opacity-70 group">
+                  <div key={task.id} 
+                       className="bg-[#21262D] p-3 rounded text-xs border border-[#238636] mb-2 border-opacity-50 opacity-70 group cursor-pointer hover:opacity-100 transition-opacity"
+                       onClick={() => { setSelectedTask(task); setEditedDescription(task.description || ''); }}>
                     <p className="font-medium text-gray-300 flex items-center mb-1">
                       <CheckCircle2 size={12} className="mr-1 text-[#238636]"/> {task.title}
                     </p>
                     <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => updateTaskStatus(task.id, 'backlog')} className="text-[10px] text-gray-500 hover:text-gray-300">Reopen</button>
+                      <button onClick={(e) => { e.stopPropagation(); updateTaskStatus(task.id, 'backlog'); }} className="text-[10px] text-gray-500 hover:text-gray-300">Reopen</button>
                     </div>
                   </div>
                 ))}
@@ -563,6 +580,70 @@ export default function MissionControl() {
                   <ReactMarkdown>{vaultFileContent || 'File is empty.'}</ReactMarkdown>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Modal */}
+      {selectedTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#161B22] border border-gray-700 rounded-lg shadow-xl w-full max-w-lg flex flex-col max-h-[80vh]">
+            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-[#0D1117] rounded-t-lg">
+              <h2 className="text-sm font-bold text-gray-200">Task #{selectedTask.id}: {selectedTask.title}</h2>
+              <button 
+                className="text-gray-400 hover:text-gray-200"
+                onClick={() => setSelectedTask(null)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 overflow-y-auto">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Status & Handoff</label>
+                <div className="flex space-x-2">
+                  <select 
+                    value={selectedTask.status} 
+                    onChange={(e) => updateTask(selectedTask.id, { status: e.target.value })}
+                    className="bg-[#21262D] border border-gray-700 text-xs rounded p-1.5 text-gray-300 focus:outline-none"
+                  >
+                    <option value="backlog">Backlog</option>
+                    <option value="in_progress_donna">In Progress (Donna)</option>
+                    <option value="in_progress_jarvis">In Progress (Jarvis)</option>
+                    <option value="pending_approval">Pending Approval</option>
+                    <option value="done">Done</option>
+                  </select>
+                  <select 
+                    value={selectedTask.assignee} 
+                    onChange={(e) => updateTask(selectedTask.id, { assignee: e.target.value })}
+                    className="bg-[#21262D] border border-gray-700 text-xs rounded p-1.5 text-gray-300 focus:outline-none"
+                  >
+                    <option value="unassigned">Unassigned</option>
+                    <option value="donna">Donna</option>
+                    <option value="jarvis">Jarvis</option>
+                    <option value="omri">Omri</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Context / Shell Draft</label>
+                <textarea 
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  className="w-full h-32 bg-[#0D1117] border border-gray-700 rounded p-2 text-xs font-mono text-gray-300 focus:border-[#58A6FF] focus:outline-none"
+                  placeholder="Task details or shell commands..."
+                />
+              </div>
+              
+              <div className="flex justify-end pt-2">
+                <button 
+                  onClick={() => updateTask(selectedTask.id, { description: editedDescription })}
+                  className="bg-[#238636] hover:bg-green-600 px-4 py-1.5 rounded text-white text-xs font-bold"
+                >
+                  Save Context
+                </button>
+              </div>
             </div>
           </div>
         </div>

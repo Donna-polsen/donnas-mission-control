@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   
   try {
     const body = await request.json();
-    const { action, id, status, assignee, title } = body;
+    const { action, id, status, assignee, title, description } = body;
     
     if (action === 'create') {
       const { data, error } = await supabase
@@ -48,12 +48,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ task: data[0] });
     }
 
-    if (!id || !status) {
-      return NextResponse.json({ error: 'Missing id or status' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
     
-    const updateData: any = { status, updated_at: new Date().toISOString() };
-    if (assignee) updateData.assignee = assignee;
+    const updateData: any = { updated_at: new Date().toISOString() };
+    if (status) updateData.status = status;
+    if (assignee !== undefined) updateData.assignee = assignee;
+    if (description !== undefined) updateData.description = description;
 
     const { data, error } = await supabase
       .from('telemetry_tasks')
