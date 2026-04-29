@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+let supabase: any = null;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,22 +17,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'File parameter is required' }, { status: 400 });
   }
 
-  // Prevent directory traversal attacks
-  const safePath = path.normalize(file).replace(/^(\.\.(\/|\\|$))+/, '');
-  
-  const basePath = path.join(process.cwd(), 'src', 'content');
-  const fullPath = path.join(basePath, safePath);
-
-  // Ensure the resolved path starts with the base path
-  if (!fullPath.startsWith(basePath)) {
-    return NextResponse.json({ error: 'Invalid path' }, { status: 403 });
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
   }
 
   try {
-    const content = fs.readFileSync(fullPath, 'utf8');
-    return NextResponse.json({ content });
+    const { data, error } = await supabase
+      .from('telemetry_state')
+      .select('data')
+      .eq('key', `vault_${file}`)
+      .single();
+
+    if (error || !data) {
+      return NextResponse.json({ error: 'File not found or inaccessible' }, { status: 404 });
+    }
+
+    return NextResponse.json({ content: data.data.content });
   } catch (error) {
-    console.error('Error reading file:', error);
+    console.error('Error reading vault from Supabase:', error);
     return NextResponse.json({ error: 'File not found or inaccessible' }, { status: 404 });
   }
 }

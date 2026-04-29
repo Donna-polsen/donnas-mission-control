@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { 
   Activity, Settings, Terminal, Map, LayoutGrid, CheckCircle2,
   FolderOpen, FileText, Cpu, Clock, Menu, X, Bell
@@ -446,14 +447,16 @@ export default function MissionControl() {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1 font-mono text-xs text-gray-300">
+            <div className="p-4 overflow-y-auto flex-1 text-sm text-gray-300">
               {isLoadingFile ? (
                 <div className="flex items-center justify-center h-32 text-gray-500">
                   <Activity size={24} className="animate-spin mr-2" />
                   Loading...
                 </div>
               ) : (
-                <pre className="whitespace-pre-wrap">{vaultFileContent || 'File is empty.'}</pre>
+                <div className="prose prose-invert prose-sm max-w-none">
+                  <ReactMarkdown>{vaultFileContent || 'File is empty.'}</ReactMarkdown>
+                </div>
               )}
             </div>
           </div>
