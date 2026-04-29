@@ -497,7 +497,7 @@ export default function MissionControl() {
           
           <div className="hidden md:flex items-center space-x-2">
              <div className={`flex items-center space-x-2 bg-opacity-20 ${statusColor} px-3 py-1 rounded-full text-xs font-medium border ${statusBorder} border-opacity-30 transition-colors duration-300`}>
-               <span className={`w-2 h-2 rounded-full ${statusBg}`}></span>
+               <span className={`w-2 h-2 rounded-full ${statusBg} ${systemStatus === 'All Systems Nominal' ? 'animate-pulse' : ''}`}></span>
                <span>{systemStatus}</span>
              </div>
           </div>
@@ -521,7 +521,7 @@ export default function MissionControl() {
         {/* Mobile Status Bar (visible only on small screens) */}
         <div className="md:hidden px-4 py-2 bg-[#161B22] border-b border-gray-800 flex justify-center">
           <div className={`flex items-center space-x-2 bg-opacity-20 ${statusColor} px-3 py-1 rounded-full text-xs font-medium border ${statusBorder} border-opacity-30 transition-colors duration-300`}>
-             <span className={`w-2 h-2 rounded-full ${statusBg}`}></span>
+             <span className={`w-2 h-2 rounded-full ${statusBg} ${systemStatus === 'All Systems Nominal' ? 'animate-pulse' : ''}`}></span>
              <span>{systemStatus}</span>
            </div>
         </div>
@@ -534,7 +534,7 @@ export default function MissionControl() {
       {/* Right Sidebar - The Pulse Feed */}
       <aside className="w-80 bg-[#0D1117] border-l border-gray-800 flex flex-col hidden lg:flex shrink-0">
         <div className="p-4 border-b border-gray-800">
-          <h2 className="text-sm font-bold text-gray-200 flex items-center"><Activity size={16} className="mr-2 text-[#238636]"/> The Pulse</h2>
+          <h2 className="text-sm font-bold text-gray-200 flex items-center"><Activity size={16} className="mr-2 text-[#238636] animate-pulse"/> The Pulse</h2>
           <div className="flex space-x-2 mt-3 text-[10px] uppercase tracking-wider">
             <span className="bg-[#21262D] text-gray-300 px-2 py-1 rounded cursor-pointer">All</span>
             <span className="text-gray-500 px-2 py-1 cursor-pointer hover:text-gray-300">Donna</span>
@@ -544,11 +544,11 @@ export default function MissionControl() {
         
         <div className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-4">
           {pulseLogs.length > 0 ? pulseLogs.map((log, i) => (
-            <div key={i} className="flex items-start text-gray-300">
+            <div key={i} className="flex items-start text-gray-300 animate-pulse-fade-in" style={{ animation: `fadeIn 0.5s ease-out forwards ${i * 0.05}s`, opacity: 0 }}>
               <span className="break-words w-full">{log}</span>
             </div>
           )) : (
-            <div className="text-gray-500">Waiting for telemetry...</div>
+            <div className="text-gray-500 animate-pulse">Waiting for telemetry...</div>
           )}
         </div>
       </aside>
