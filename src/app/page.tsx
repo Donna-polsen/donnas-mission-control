@@ -585,65 +585,109 @@ export default function MissionControl() {
         </div>
       )}
 
-      {/* Task Modal */}
+      {/* Sims-Style Task Modal */}
       {selectedTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#161B22] border border-gray-700 rounded-lg shadow-xl w-full max-w-lg flex flex-col max-h-[80vh]">
-            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-[#0D1117] rounded-t-lg">
-              <h2 className="text-sm font-bold text-gray-200">Task #{selectedTask.id}: {selectedTask.title}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200">
+          <div className="bg-[#0D1117]/95 border border-[#58A6FF]/30 rounded-xl shadow-[0_0_40px_rgba(88,166,255,0.15)] w-full max-w-2xl flex flex-col max-h-[85vh] overflow-hidden transform animate-in zoom-in-95 duration-200">
+            
+            {/* Header */}
+            <div className="p-5 border-b border-gray-800 flex justify-between items-center bg-gradient-to-r from-[#161B22] to-[#0D1117]">
+              <div className="flex items-center space-x-3">
+                <div className="h-8 w-8 rounded-full bg-[#58A6FF]/20 border border-[#58A6FF] flex items-center justify-center">
+                  <Terminal size={14} className="text-[#58A6FF]" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-[#58A6FF] uppercase tracking-widest font-bold">Active Operation</div>
+                  <h2 className="text-lg font-bold text-gray-100 leading-tight">{selectedTask.title}</h2>
+                </div>
+              </div>
               <button 
-                className="text-gray-400 hover:text-gray-200"
+                className="text-gray-500 hover:text-white transition-colors bg-gray-800/50 hover:bg-gray-700 rounded-full p-1.5"
                 onClick={() => setSelectedTask(null)}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
-            <div className="p-6 space-y-4 overflow-y-auto">
+
+            <div className="p-6 space-y-6 overflow-y-auto">
+              
+              {/* Assignee / Handoff Ribbon */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Status & Handoff</label>
-                <div className="flex space-x-2">
-                  <select 
-                    value={selectedTask.status} 
-                    onChange={(e) => updateTask(selectedTask.id, { status: e.target.value })}
-                    className="bg-[#21262D] border border-gray-700 text-xs rounded p-1.5 text-gray-300 focus:outline-none"
-                  >
-                    <option value="backlog">Backlog</option>
-                    <option value="in_progress_donna">In Progress (Donna)</option>
-                    <option value="in_progress_jarvis">In Progress (Jarvis)</option>
-                    <option value="pending_approval">Pending Approval</option>
-                    <option value="done">Done</option>
-                  </select>
-                  <select 
-                    value={selectedTask.assignee} 
-                    onChange={(e) => updateTask(selectedTask.id, { assignee: e.target.value })}
-                    className="bg-[#21262D] border border-gray-700 text-xs rounded p-1.5 text-gray-300 focus:outline-none"
-                  >
-                    <option value="unassigned">Unassigned</option>
-                    <option value="donna">Donna</option>
-                    <option value="jarvis">Jarvis</option>
-                    <option value="omri">Omri</option>
-                  </select>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Operator Handoff</label>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { id: 'donna', icon: '🤖', label: 'Donna', color: 'border-[#58A6FF] text-[#58A6FF] bg-[#58A6FF]/10' },
+                    { id: 'jarvis', icon: '⚡', label: 'Jarvis', color: 'border-[#D29922] text-[#D29922] bg-[#D29922]/10' },
+                    { id: 'omri', icon: '👤', label: 'Omri', color: 'border-[#238636] text-[#238636] bg-[#238636]/10' },
+                    { id: 'unassigned', icon: '⏸️', label: 'Unassigned', color: 'border-gray-600 text-gray-400 bg-gray-800/50' }
+                  ].map(agent => (
+                    <button
+                      key={agent.id}
+                      onClick={() => updateTask(selectedTask.id, { assignee: agent.id })}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg border text-xs font-medium transition-all duration-200 ${
+                        selectedTask.assignee === agent.id 
+                          ? `${agent.color} shadow-[0_0_15px_rgba(255,255,255,0.05)] scale-105 ring-1 ring-white/10` 
+                          : 'border-gray-800 text-gray-500 hover:border-gray-600 bg-[#161B22]'
+                      }`}
+                    >
+                      <span>{agent.icon}</span>
+                      <span>{agent.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status Ribbon */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Operation Status</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'backlog', label: 'Backlog' },
+                    { id: 'in_progress_donna', label: 'Active (Donna)' },
+                    { id: 'in_progress_jarvis', label: 'Active (Jarvis)' },
+                    { id: 'pending_approval', label: 'Pending Human' },
+                    { id: 'done', label: 'Complete' }
+                  ].map(status => (
+                    <button
+                      key={status.id}
+                      onClick={() => updateTask(selectedTask.id, { status: status.id })}
+                      className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                        selectedTask.status === status.id
+                          ? 'bg-gray-200 text-black'
+                          : 'bg-[#161B22] border border-gray-800 text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                      }`}
+                    >
+                      {status.label}
+                    </button>
+                  ))}
                 </div>
               </div>
               
+              {/* Context Area */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Context / Shell Draft</label>
-                <textarea 
-                  value={editedDescription}
-                  onChange={(e) => setEditedDescription(e.target.value)}
-                  className="w-full h-32 bg-[#0D1117] border border-gray-700 rounded p-2 text-xs font-mono text-gray-300 focus:border-[#58A6FF] focus:outline-none"
-                  placeholder="Task details or shell commands..."
-                />
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Context / Execution Script</label>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-b from-[#58A6FF]/5 to-transparent rounded-lg pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+                  <textarea 
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    className="w-full h-40 bg-[#0D1117] border border-gray-800 rounded-lg p-4 text-xs font-mono text-gray-300 leading-relaxed focus:border-[#58A6FF]/50 focus:ring-1 focus:ring-[#58A6FF]/30 focus:outline-none transition-all resize-none z-10 relative"
+                    placeholder="Initialize operation context..."
+                  />
+                </div>
               </div>
-              
-              <div className="flex justify-end pt-2">
-                <button 
-                  onClick={() => updateTask(selectedTask.id, { description: editedDescription })}
-                  className="bg-[#238636] hover:bg-green-600 px-4 py-1.5 rounded text-white text-xs font-bold"
-                >
-                  Save Context
-                </button>
-              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-800 bg-[#161B22] flex justify-between items-center">
+              <span className="text-[10px] text-gray-500 font-mono">ID: {selectedTask.id} | Last Sync: Live</span>
+              <button 
+                onClick={() => updateTask(selectedTask.id, { description: editedDescription })}
+                className="bg-[#238636] hover:bg-[#2ea043] px-6 py-2 rounded-md text-white text-xs font-bold shadow-[0_0_10px_rgba(35,134,54,0.3)] transition-all hover:scale-105 active:scale-95 flex items-center"
+              >
+                <CheckCircle2 size={14} className="mr-2" />
+                Commit Context
+              </button>
             </div>
           </div>
         </div>
