@@ -24,7 +24,7 @@ while true; do
     echo "Changes detected, syncing..."
     git add .
     git commit -m "chore: auto-sync dashboard state [$(date +'%Y-%m-%dT%H:%M:%S%z')]"
-    git push origin main
+    GIT_SSH_COMMAND="ssh -i /home/ubuntu/.ssh/github_donna_ed25519 -o StrictHostKeyChecking=no" git push origin main
   fi
   
   # Sleep for 30 seconds before checking again
